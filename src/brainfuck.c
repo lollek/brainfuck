@@ -1,9 +1,12 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <getopt.h>
 #include <readline/readline.h>
 
+#ifndef DEBUG
 #define DEBUG 0
+#endif
 
 #define debug_print(fmt, ...) \
           do { if (DEBUG) fprintf(stderr, fmt, __VA_ARGS__); } while (0)
@@ -72,8 +75,36 @@ int prompt(char *line) {
   return prompt(readline(">> "));
 }
 
-int main(void) {
-  resize_stack(30000);
+int main(int argc, char **argv) {
+  int option_index = 0;
+  size_t starting_stack_size = 30000;
+  struct option long_options[] = {
+    {"stack-size",  required_argument, 0, 's'},
+    {"help",        no_argument,       0, '0'},
+    {0,             0,                 0,  0}
+  };
+
+  while (1) {
+    int c = getopt_long(argc, argv, "s:", long_options, &option_index);
+    if (c == -1) {
+      break;
+    }
+    switch (c) {
+      case 's': starting_stack_size = atoi(optarg); break;
+      case '0': 
+        fprintf(stdout,
+                "Usage: %s [OPTIONS]\n\n"
+                "  -s, --stack-size=N       set stack size (default 30000)\n"
+                "      --help               display this help and exit\n",
+                argv[0]);
+        return 0;
+      default: fprintf(stderr, "Try '%s --help' for more information\n",
+                        argv[0]);
+               return 1;
+    }
+  }
+
+  resize_stack(starting_stack_size);
   printf("Welcome to brainfuck! Use Ctrl-D to exit\n");
   return prompt(readline(">> "));
 }
