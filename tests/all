@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::Simple tests => 2;
+use Test::Simple tests => 3;
 
 # Hello World!
 foreach my $file (<tests/HELLO*.BF>) {
