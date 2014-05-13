@@ -1,0 +1,14 @@
+#! /usr/bin/env perl
+
+use strict;
+use warnings;
+
+use Test::Simple tests => 2;
+
+# Hello World!
+foreach my $file (<tests/HELLO*.BF>) {
+  my $expected = "Hello World!\n";
+  my $results = `bin/brainfuck $file`;
+  ok($expected eq $results)
+     or die "$file failed! Expected: $expected. Was: $results\n";
+}
