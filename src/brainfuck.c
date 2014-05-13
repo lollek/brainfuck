@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <getopt.h>
 #include <readline/readline.h>
 
@@ -29,11 +30,11 @@ void resize_stack(size_t new_stack_size) {
   memset(&stack[old_stack_size], 0, stack_size - old_stack_size);
 }
 
-int prompt(char *line) {
+void eval_bf(char *line) {
   char *c = line;
   char *tmpline = NULL;
   if (c == NULL) {
-    return 0;
+    return;
   }
 
   while (*c) {
@@ -58,7 +59,7 @@ int prompt(char *line) {
           abort();
         }
         strcpy(tmpline, c);
-        prompt(tmpline);
+        eval_bf(tmpline);
         for (; *c != ']' && *c != '\0'; ++c);
         for (; *c == ']'; ++c);
         break;
@@ -68,13 +69,10 @@ int prompt(char *line) {
           c = line;
         } else {
           free(line);
-          return 0;
+          return;
         } break;
     }
   }
-
-  free(line);
-  return prompt(readline(">> "));
 }
 
 int main(int argc, char **argv) {
@@ -107,6 +105,18 @@ int main(int argc, char **argv) {
   }
 
   resize_stack(starting_stack_size);
-  printf("Welcome to brainfuck! Use Ctrl-D to exit\n");
-  return prompt(readline(">> "));
+  if (!isatty(STDIN_FILENO)) {
+    char buf[BUFSIZ];
+    while (fgets(buf, BUFSIZ, stdin) != NULL) {
+      eval_bf(buf);
+    }
+  } else {
+    char *line = NULL;
+    printf("Welcome to brainfuck! Use Ctrl-D to exit\n");
+    while ((line = readline(">> ")) != NULL) {
+      eval_bf(line);
+      free(line);
+    }
+  }
+  return 0;
 }
