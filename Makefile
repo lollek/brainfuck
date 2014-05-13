@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -Wall -Wextra -pedantic -Werror -O3 -g -std=c99
+CFLAGS = -Wall -Wextra -pedantic -Werror -O3 -g -ansi -std=c99
 LDFLAGS = -lreadline
 OBJS = $(addsuffix .o, $(basename $(wildcard src/*.c)))
 PROG_NAMES = brainfuck
