@@ -2,6 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <errno.h>
 #include <getopt.h>
 #include <readline/readline.h>
 
@@ -105,11 +106,32 @@ int main(int argc, char **argv) {
   }
 
   resize_stack(starting_stack_size);
+
+  /* stdin pipe */
   if (!isatty(STDIN_FILENO)) {
     char buf[BUFSIZ];
     while (fgets(buf, BUFSIZ, stdin) != NULL) {
       eval_bf(buf);
     }
+
+  /* file arg */
+  } else if (optind < argc) {
+    FILE *file;
+    char buf[BUFSIZ];
+    int i;
+    for (i = optind; i < argc; ++i) {
+      if ((file = fopen(argv[i], "r")) == NULL) {
+        fprintf(stderr, "%s: unable to open %s: %s\n",
+                argv[0], argv[i], strerror(errno));
+        continue;
+      }
+      while (fgets(buf, BUFSIZ, file) != NULL) {
+        eval_bf(buf);
+      }
+      fclose(file);
+    }
+
+  /* repl */
   } else {
     char *line = NULL;
     printf("Welcome to brainfuck! Use Ctrl-D to exit\n");
