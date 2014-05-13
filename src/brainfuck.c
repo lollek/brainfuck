@@ -43,17 +43,19 @@ void brainfuck(char *line) {
       case ',': stack[stack_ptr] = getchar(); break;
       case '+': ++stack[stack_ptr]; break;
       case '-': --stack[stack_ptr]; break;
-      case '>': if (stack_ptr +1 < stack_size) {
-                  ++stack_ptr;
-                } break;
-      case '<': if (stack_ptr > 0) {
-                  --stack_ptr;
-                } break;
-      case '?':
-        printf("cmd:%c @%d[%d]\n", c[-1], stack_ptr, stack[stack_ptr]);
-        break;
+      case '>': if (stack_ptr +1 < stack_size) { ++stack_ptr; } break;
+      case '<': if (stack_ptr > 0)             { --stack_ptr; } break;
+      case '?': printf("@%d[%d]\n", stack_ptr, stack[stack_ptr]); break;
 
       case '[':
+        /* Make sure there's a closing bracket before executing */
+        if (strchr(c, ']') == NULL) {
+          fprintf(stderr, "Warning: No closing bracket found. "
+                          "The following code will not be executed:\n%s\n",
+                          &c[-1]);
+          return;
+        }
+
         if ((tmpline = malloc(sizeof *tmpline * (strlen(c) +1))) == NULL) {
           fprintf(stderr, "Virtual memory exceeded!\n");
           abort();
@@ -61,8 +63,14 @@ void brainfuck(char *line) {
         strcpy(tmpline, c);
         brainfuck(tmpline);
         free(tmpline);
+        tmpline = NULL;
         for (; *c != ']' && *c != '\0'; ++c);
         for (; *c == ']'; ++c);
+        /*
+        while (*c == ']') {
+          c = strchr(c, ']');
+        }
+        */
         break;
 
       case ']':
