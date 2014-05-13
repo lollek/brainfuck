@@ -101,25 +101,28 @@ static int _brainfuck(char *line) {
 }
 
 int brainfuck(char *line) {
+  long num_brackets = 0;
+
   if (stack == NULL) {
     fprintf(stderr, "Error: There is no stack!\n");
+    return 1;
   } else if (line == NULL) {
     fprintf(stderr, "Error: NULL data received!\n");
+    return 1;
+  }
 
-  } else {
-    long num_brackets = 0;
-    for (char *c = line; *c != '\0'; ++c) {
-      if (*c == '[') {
-        ++num_brackets;
-      } else if (*c == ']') {
-        --num_brackets;
-      }
-    }
-    if (num_brackets != 0) {
+  for (char *c = line; *c != '\0'; ++c) {
+    if      (*c == '[') { ++num_brackets; }
+    else if (*c == ']') { --num_brackets; }
+    if (num_brackets < 0) {
       fprintf(stderr, "Error: Unmatched bracket(s)\n");
-    } else {
-      return _brainfuck(line);
+      return 1;
     }
   }
-  return 1;
+  if (num_brackets != 0) {
+    fprintf(stderr, "Error: Unmatched bracket(s)\n");
+    return 1;
+  } else {
+    return _brainfuck(line);
+  }
 }
