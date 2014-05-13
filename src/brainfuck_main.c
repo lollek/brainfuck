@@ -73,10 +73,12 @@ int main(int argc, char **argv) {
       case 's': starting_stack_size = atoi(optarg); break;
       case '0': 
         fprintf(stdout,
-                "Usage: %s [OPTIONS]\n\n"
+                "Usage: %s [OPTIONS] [FILE]\n"
+                "Execute brainfuck with FILE(s) as source.\n\n"
                 "  -s, --stack-size=N       set stack size (default 30000)\n"
-                "      --help               display this help and exit\n",
-                argv[0]);
+                "      --help               display this help and exit\n\n"
+                "With no FILE, a repl is started\n"
+                ,argv[0]);
         return 0;
       default: fprintf(stderr, "Try '%s --help' for more information\n",
                         argv[0]);
@@ -86,15 +88,16 @@ int main(int argc, char **argv) {
 
   resize_brainfuck_stack(starting_stack_size);
 
-  /* stdin pipe */
+  /* stdin pipe - cannot handle linebreaks :( 
   if (!isatty(STDIN_FILENO)) {
     char buf[BUFSIZ];
     while (fgets(buf, BUFSIZ, stdin) != NULL) {
       brainfuck(buf);
     }
+  */
 
   /* file arg */
-  } else if (optind < argc) {
+  if (optind < argc) {
     int i;
     for (i = optind; i < argc; ++i) {
       eval_file(argv[i]);
