@@ -42,8 +42,12 @@ int prompt(char *line) {
       case ',': stack[stack_ptr] = getchar(); break;
       case '+': ++stack[stack_ptr]; break;
       case '-': --stack[stack_ptr]; break;
-      case '>': stack_ptr = (stack_ptr + 1) % stack_size; break;
-      case '<': stack_ptr = (stack_ptr - 1) % stack_size; break;
+      case '>': if (stack_ptr +1 < stack_size) {
+                  ++stack_ptr;
+                } break;
+      case '<': if (stack_ptr > 0) {
+                  --stack_ptr;
+                } break;
       case '?':
         printf("cmd:%c @%d[%d]\n", c[-1], stack_ptr, stack[stack_ptr]);
         break;
@@ -55,10 +59,8 @@ int prompt(char *line) {
         }
         strcpy(tmpline, c);
         prompt(tmpline);
-        while (*c != ']' && c[1] != '\0') {
-          ++c;
-        }
-        ++c;
+        for (; *c != ']' && *c != '\0'; ++c);
+        for (; *c == ']'; ++c);
         break;
 
       case ']':
