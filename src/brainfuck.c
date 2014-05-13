@@ -15,26 +15,34 @@ static char *stack = NULL;
 static size_t stack_size = 0;
 static size_t stack_ptr = 0;
 
-void resize_stack(size_t new_stack_size) {
+int resize_brainfuck_stack(size_t new_stack_size) {
+  char *new_stack;
   if (new_stack_size == 0) {
     fprintf(stderr, "Error: Unable to set stack size to 0\n");
-    return;
+    return 1;
   }
 
   debug_print("Stack size: %d -> %d\n", stack_size, new_stack_size);
   stack_size = new_stack_size;
-  if ((stack = realloc(stack, stack_size)) == NULL) {
-    fprintf(stderr, "Virtual memory exceeded!\n");
-    abort();
+  if ((new_stack = realloc(stack, stack_size)) == NULL) {
+    fprintf(stderr, "Error: Virtual memory exceeded!\n");
+    return 1;
   }
+  stack = new_stack;
   memset(stack, 0, stack_size);
+  return 0;
 }
 
-void brainfuck(char *line) {
+void free_brainfuck_stack() {
+  free(stack);
+  stack = NULL;
+}
+
+static int _brainfuck(char *line) {
   char *c = line;
   char *tmpline = NULL;
-  if (stack == NULL || c == NULL) {
-    return;
+  if (c == NULL) {
+    return 0;
   }
 
   while (*c) {
@@ -53,7 +61,7 @@ void brainfuck(char *line) {
           fprintf(stderr, "Warning: No closing bracket found. "
                           "The following code will not be executed:\n%s\n",
                           &c[-1]);
-          return;
+          return 1;
         }
 
         if ((tmpline = malloc(sizeof *tmpline * (strlen(c) +1))) == NULL) {
@@ -61,24 +69,44 @@ void brainfuck(char *line) {
           abort();
         }
         strcpy(tmpline, c);
-        brainfuck(tmpline);
+        _brainfuck(tmpline);
         free(tmpline);
         tmpline = NULL;
         for (; *c != ']' && *c != '\0'; ++c);
         for (; *c == ']'; ++c);
-        /*
-        while (*c == ']') {
-          c = strchr(c, ']');
-        }
-        */
         break;
 
       case ']':
         if (stack[stack_ptr] != 0) {
           c = line;
         } else {
-          return;
+          return 0;
         } break;
     }
   }
+  return 0;
+}
+
+int brainfuck(char *line) {
+  if (stack == NULL) {
+    fprintf(stderr, "Error: There is no stack!\n");
+  } else if (line == NULL) {
+    fprintf(stderr, "Error: NULL data received!\n");
+
+  } else {
+    long num_brackets = 0;
+    for (char *c = line; *c != '\0'; ++c) {
+      if (*c == '[') {
+        ++num_brackets;
+      } else if (*c == ']') {
+        --num_brackets;
+      }
+    }
+    if (num_brackets != 0) {
+      fprintf(stderr, "Error: Unmatched bracket(s)\n");
+    } else {
+      return _brainfuck(line);
+    }
+  }
+  return 1;
 }

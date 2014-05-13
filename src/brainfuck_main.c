@@ -84,7 +84,7 @@ int main(int argc, char **argv) {
     }
   }
 
-  resize_stack(starting_stack_size);
+  resize_brainfuck_stack(starting_stack_size);
 
   /* stdin pipe */
   if (!isatty(STDIN_FILENO)) {
@@ -109,5 +109,6 @@ int main(int argc, char **argv) {
       free(line);
     }
   }
+  free_brainfuck_stack();
   return 0;
 }
