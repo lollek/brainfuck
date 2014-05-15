@@ -41,12 +41,13 @@ int eval_file(const char *filename) {
     return 1;
   }
 
-  if ((line = malloc(sizeof *line * linelen)) == NULL) {
+  if ((line = malloc(sizeof *line * (linelen +1))) == NULL) {
     fprintf(stderr, "%s: virtual memory exceeded!\n", progname);
     abort();
   }
 
   fread(line, sizeof *line, linelen, file);
+  line[linelen] = '\0';
   fclose(file);
   brainfuck(line);
   free(line);
