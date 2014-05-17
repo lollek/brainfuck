@@ -70,27 +70,20 @@ static int _brainfuck(char *line) {
         }
 
         if (stack[stack_ptr] != 0) {
-          char *tmpline;
+          /* Change closing bracket to a 0, so we can use it as a subfunction */
+          char stop_symbol = c[sublen];
+          c[sublen] = '\0';
 
-          /* Create a subproc */
-          if ((tmpline = malloc(sizeof *tmpline * (sublen +1))) == NULL) {
-            fprintf(stderr, "Virtual memory exceeded!\n");
-            return 1;
-          }
-          strncpy(tmpline, c, sublen +1);
-          tmpline[sublen] = '\0';
-
-          /* Execute subproc until pointer points to 0 */
+          /* Execute subfunction until pointer points to 0 */
           while (stack[stack_ptr] != 0) {
-            _brainfuck(tmpline);
+            _brainfuck(c);
           }
 
-          /* Remove subproc */
-          free(tmpline);
-          tmpline = NULL;
+          /* Restore the closing bracket and continue */
+          c[sublen] = stop_symbol;
         }
 
-        /* Afterwards, move to end of subproc */
+        /* Afterwards, move to the end of the subfunction */
         c += sublen +1;
         break;
 
