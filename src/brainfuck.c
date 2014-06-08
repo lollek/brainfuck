@@ -27,6 +27,7 @@ int resize_brainfuck_stack(size_t new_stack_size) {
     fprintf(stderr, "Error: Virtual memory exceeded!\n");
     return 1;
   }
+
   stack_size = new_stack_size;
   stack = new_stack;
   memset(stack, 0, stack_size);
@@ -36,6 +37,7 @@ int resize_brainfuck_stack(size_t new_stack_size) {
 void free_brainfuck_stack() {
   free(stack);
   stack = NULL;
+  stack_size = 0;
 }
 
 static int _brainfuck(char *line) {
