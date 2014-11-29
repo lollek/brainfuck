@@ -5,7 +5,7 @@
 #include <getopt.h>
 #include <readline/readline.h>
 
-#include "brainfuck.h"
+#include "brainfuck_repl.h"
 
 static const char *progname = NULL;
 
@@ -86,22 +86,14 @@ int main(int argc, char **argv) {
     }
   }
 
-  resize_brainfuck_stack(starting_stack_size);
-
-  /* stdin pipe - cannot handle linebreaks :( 
-  if (!isatty(STDIN_FILENO)) {
-    char buf[BUFSIZ];
-    while (fgets(buf, BUFSIZ, stdin) != NULL) {
-      brainfuck(buf);
-    }
-  */
+  resize_brainfuck_repl_stack(starting_stack_size);
 
   /* file arg */
   if (optind < argc) {
     int i;
     for (i = optind; i < argc; ++i) {
       char *data = read_file(argv[i]);
-      brainfuck(data);
+      brainfuck_repl_eval(data);
       free(data);
     }
 
@@ -110,10 +102,10 @@ int main(int argc, char **argv) {
     char *line = NULL;
     printf("Welcome to brainfuck! Use Ctrl-D to exit\n");
     while ((line = readline(">> ")) != NULL) {
-      brainfuck(line);
+      brainfuck_repl_eval(line);
       free(line);
     }
   }
-  free_brainfuck_stack();
+  free_brainfuck_repl_stack();
   return 0;
 }

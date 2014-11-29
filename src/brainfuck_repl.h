@@ -1,5 +1,5 @@
-#ifndef __BRAINFUCK__H__
-#define __BRAINFUCK__H__
+#ifndef BRAINFUCK_REPL_H
+#define BRAINFUCK_REPL_H
 
 #include <stddef.h>
 
@@ -8,14 +8,14 @@
  *
  * returns 0 on success
  * on error, the stack is unchanged */
-int resize_brainfuck_stack(size_t new_stack_size);
+int resize_brainfuck_repl_stack(size_t new_stack_size);
 
 /* Free's the brainfuck stack */
-void free_brainfuck_stack();
+void free_brainfuck_repl_stack();
 
 /* Evaluates the code in line
  *
  * returns 0 on success */
-int brainfuck(char *line);
+int brainfuck_repl_eval(char *line);
 
-#endif /* __BRAINFUCK__H__ */
+#endif /* BRAINFUCK_REPL_H */

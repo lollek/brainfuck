@@ -2,7 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "brainfuck.h"
+#include "brainfuck_repl.h"
 
 #ifndef DEBUG
 #define DEBUG 0
@@ -15,7 +15,7 @@ static char *stack = NULL;
 static size_t stack_size = 0;
 static size_t stack_ptr = 0;
 
-int resize_brainfuck_stack(size_t new_stack_size) {
+int resize_brainfuck_repl_stack(size_t new_stack_size) {
   char *new_stack;
   if (new_stack_size == 0) {
     fprintf(stderr, "Error: Unable to set stack size to 0\n");
@@ -34,7 +34,7 @@ int resize_brainfuck_stack(size_t new_stack_size) {
   return 0;
 }
 
-void free_brainfuck_stack() {
+void free_brainfuck_repl_stack() {
   free(stack);
   stack = NULL;
   stack_size = 0;
@@ -95,7 +95,7 @@ static int _brainfuck(char *line) {
   return 0;
 }
 
-int brainfuck(char *line) {
+int brainfuck_repl_eval(char *line) {
   long num_brackets = 0;
 
   if (stack == NULL) {
