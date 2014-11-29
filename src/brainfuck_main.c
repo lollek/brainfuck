@@ -9,7 +9,7 @@
 
 static const char *progname = NULL;
 
-int eval_file(const char *filename) {
+char *read_file(const char *filename) {
   FILE *file;
   char *line;
   long linelen;
@@ -17,41 +17,40 @@ int eval_file(const char *filename) {
   if ((file = fopen(filename, "r")) == NULL) {
     fprintf(stderr, "%s: cannot access %s: %s\n",
         progname, filename, strerror(errno));
-    return 1;
+    return NULL;
   }
 
   if (fseek(file, 0, SEEK_END) == -1) {
     fprintf(stderr, "%s: failed to seek in %s: %s\n",
         progname, filename, strerror(errno));
     fclose(file);
-    return 1;
+    return NULL;
   }
 
   if ((linelen = ftell(file)) == -1) {
     fprintf(stderr, "%s: cannot get size of %s: %s\n",
         progname, filename, strerror(errno));
     fclose(file);
-    return 1;
+    return NULL;
   }
 
   if (fseek(file, 0, SEEK_SET) == -1) {
     fprintf(stderr, "%s: failed to rewind %s: %s\n",
         progname, filename, strerror(errno));
     fclose(file);
-    return 1;
+    return NULL;
   }
 
   if ((line = malloc(sizeof *line * (linelen +1))) == NULL) {
     fprintf(stderr, "%s: virtual memory exceeded!\n", progname);
-    abort();
+    fclose(file);
+    return NULL;
   }
 
   fread(line, sizeof *line, linelen, file);
   line[linelen] = '\0';
   fclose(file);
-  brainfuck(line);
-  free(line);
-  return 0;
+  return line;
 }
 
 int main(int argc, char **argv) {
@@ -72,7 +71,7 @@ int main(int argc, char **argv) {
     }
     switch (c) {
       case 's': starting_stack_size = atoi(optarg); break;
-      case '0': 
+      case '0':
         fprintf(stdout,
                 "Usage: %s [OPTIONS] [FILE]\n"
                 "Execute brainfuck with FILE(s) as source.\n\n"
@@ -101,7 +100,9 @@ int main(int argc, char **argv) {
   if (optind < argc) {
     int i;
     for (i = optind; i < argc; ++i) {
-      eval_file(argv[i]);
+      char *data = read_file(argv[i]);
+      brainfuck(data);
+      free(data);
     }
 
   /* repl */
