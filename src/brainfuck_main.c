@@ -7,6 +7,8 @@
 
 #include "brainfuck_repl.h"
 
+#include "brainfuck_main.h"
+
 static const char *progname = NULL;
 
 char *read_file(const char *filename) {
@@ -53,7 +55,37 @@ char *read_file(const char *filename) {
   return line;
 }
 
+int mode_repl(int argc, char **argv, size_t stack_size, int optind) {
+  resize_brainfuck_repl_stack(stack_size);
+
+  /* file arg */
+  if (optind < argc) {
+    int i;
+    for (i = optind; i < argc; ++i) {
+      char *data = read_file(argv[i]);
+      if (data == NULL)
+        continue;
+
+      brainfuck_repl_eval(data);
+      free(data);
+    }
+
+  /* repl */
+  } else {
+    char *line = NULL;
+    printf("Welcome to brainfuck! Use Ctrl-D to exit\n");
+    while ((line = readline(">> ")) != NULL) {
+      brainfuck_repl_eval(line);
+      free(line);
+    }
+  }
+
+  free_brainfuck_repl_stack();
+  return 0;
+}
+
 int main(int argc, char **argv) {
+  output_t output = REPL;
   int option_index = 0;
   size_t starting_stack_size = 30000;
   struct option long_options[] = {
@@ -85,27 +117,8 @@ int main(int argc, char **argv) {
                return 1;
     }
   }
-
-  resize_brainfuck_repl_stack(starting_stack_size);
-
-  /* file arg */
-  if (optind < argc) {
-    int i;
-    for (i = optind; i < argc; ++i) {
-      char *data = read_file(argv[i]);
-      brainfuck_repl_eval(data);
-      free(data);
-    }
-
-  /* repl */
-  } else {
-    char *line = NULL;
-    printf("Welcome to brainfuck! Use Ctrl-D to exit\n");
-    while ((line = readline(">> ")) != NULL) {
-      brainfuck_repl_eval(line);
-      free(line);
-    }
-  }
-  free_brainfuck_repl_stack();
-  return 0;
+  if (output == REPL)
+    return mode_repl(argc, argv, starting_stack_size, optind);
+  else
+    return 1;
 }
