@@ -2,7 +2,8 @@
 #define BRAINFUCK_MAIN_H
 
 typedef enum output_t {
-  REPL
+  REPL,
+  NASM
 } output_t;
 
 /* Read all contents of a file to the stack
@@ -16,5 +17,10 @@ char *read_file(const char *filename);
  *
  * Returns 0 on success, 1 on error */
 int mode_repl(int argc, char **argv, size_t stack_size, int optind);
+
+/* Switches to NASM mode
+ *
+ * Returns 0 on success, 1 on error */
+int mode_nasm(int argc, char **argv, int optind);
 
 #endif /* BRAINFUCK_MAIN_H */
