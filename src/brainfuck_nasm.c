@@ -3,19 +3,11 @@
 static int counter = 0;
 
 static inline void op_put(FILE *output) {
-  fprintf(output, "\tmov\teax,4\n"
-                  "\tmov\tebx,1\n"
-                  "\tmov\tecx,ebp\n"
-                  "\tmov\tedx,1\n"
-                  "\tint\t80h\n");
+  fprintf(output, "\tcall\t_put\n");
 }
 
 static inline void op_get(FILE *output) {
-  fprintf(output, "\tmov\teax,3\n"
-                  "\tmov\tebx,0\n"
-                  "\tmov\tecx,ebp\n"
-                  "\tmov\tedx,1\n"
-                  "\tint\t80h\n");
+  fprintf(output, "\tcall\t_get\n");
 }
 
 static inline void op_inc(FILE *output) {
@@ -54,7 +46,21 @@ static void op_jmp(FILE *output) {
 int brainfuck_nasm_write(FILE *output, FILE *input) {
   fprintf(output, "section .text\n"
                   "\tglobal _start\n"
-                  "_start:\n"
+  /* PUT */       "_put:\n"
+                  "\tmov\teax,4\n"
+                  "\tmov\tebx,1\n"
+                  "\tmov\tecx,ebp\n"
+                  "\tmov\tedx,1\n"
+                  "\tint\t80h\n"
+                  "\tret\n"
+  /* GET */       "_get:\n"
+                  "\tmov\teax,3\n"
+                  "\tmov\tebx,0\n"
+                  "\tmov\tecx,ebp\n"
+                  "\tmov\tedx,1\n"
+                  "\tint\t80h\n"
+                  "\tret\n"
+  /* START */     "_start:\n"
                   "\tsub\tesp,7000\n"
                   "\tmov\tebp,esp\n");
 
