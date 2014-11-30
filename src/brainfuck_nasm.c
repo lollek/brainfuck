@@ -1,47 +1,25 @@
 #include "brainfuck_nasm.h"
 
-static unsigned char stack[256] = { 0 };
-static unsigned char ptr = 0;
+#define op_put(output) fprintf(output, "\tcall\t_put\n");
+#define op_get(output) fprintf(output, "\tcall\t_get\n");
+#define op_inc(output) fprintf(output, "\tinc\tbyte[ebp]\n");
+#define op_dec(output) fprintf(output, "\tdec\tbyte[ebp]\n");
+#define op_mvr(output) fprintf(output, "\tinc\tebp\n");
+#define op_mvl(output) fprintf(output, "\tdec\tebp\n");
 
-static inline void op_put(FILE *output) {
-  fprintf(output, "\tcall\t_put\n");
-}
-
-static inline void op_get(FILE *output) {
-  fprintf(output, "\tcall\t_get\n");
-}
-
-static inline void op_inc(FILE *output) {
-  fprintf(output, "\tinc\tbyte[ebp]\n");
-}
-
-static inline void op_dec(FILE *output) {
-  fprintf(output, "\tdec\tbyte[ebp]\n");
-}
-
-static inline void op_mvr(FILE *output) {
-  fprintf(output, "\tinc\tebp\n");
-}
-
-static inline void op_mvl(FILE *output) {
-  fprintf(output, "\tdec\tebp\n");
-}
-
-static void op_tag(FILE *output) {
-  fprintf(output, "\tcmp\tbyte[ebp],0\n"
-                  "\tjz\tend%d%d\n"
-                  "tag%d%d:",
-          ptr, stack[ptr], ptr, stack[ptr]);
+#define op_tag(output)                       \
+  fprintf(output, "\tcmp\tbyte[ebp],0\n"     \
+                  "\tjz\tend%d%d\n"          \
+                  "tag%d%d:",                \
+          ptr, stack[ptr], ptr, stack[ptr]); \
   ++ptr;
-}
 
-static void op_jmp(FILE *output) {
-  fprintf(output, "\tcmp\tbyte[ebp],0\n"
-                  "\tjnz\ttag%d%d\n"
-                  "end%d%d:",
-                  ptr -1, stack[ptr -1], ptr -1, stack[ptr -1]);
+#define op_jmp(output)                                           \
+  fprintf(output, "\tcmp\tbyte[ebp],0\n"                         \
+                  "\tjnz\ttag%d%d\n"                             \
+                  "end%d%d:",                                    \
+                  ptr -1, stack[ptr -1], ptr -1, stack[ptr -1]); \
   stack[--ptr]++;
-}
 
 int brainfuck_nasm_write(FILE *output, FILE *input) {
   fprintf(output, "section .text\n"
@@ -63,7 +41,10 @@ int brainfuck_nasm_write(FILE *output, FILE *input) {
                   "\tmov\tebp,esp\t\t; Set ptr to start of stack\n"
                   "\tmov\tedx,1\t\t; edx (for _put and _get) is always 1\n");
 
+  unsigned char stack[256] = { 0 };
+  unsigned char ptr = 0;
   int op;
+
   while ((op = fgetc(input)) != EOF) {
     switch (op) {
       case '.': op_put(output); break;
