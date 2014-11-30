@@ -1,3 +1,4 @@
+#include <stdbool.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -13,11 +14,8 @@
 static const char *progname = NULL;
 
 char *read_file(const char *filename) {
-  FILE *file;
-  char *line;
-  long linelen;
-
-  if ((file = fopen(filename, "r")) == NULL) {
+  FILE *file = fopen(filename, "r");
+  if (file == NULL) {
     fprintf(stderr, "%s: cannot access %s: %s\n",
         progname, filename, strerror(errno));
     return NULL;
@@ -30,7 +28,8 @@ char *read_file(const char *filename) {
     return NULL;
   }
 
-  if ((linelen = ftell(file)) == -1) {
+  long linelen = ftell(file);
+  if (linelen == -1) {
     fprintf(stderr, "%s: cannot get size of %s: %s\n",
         progname, filename, strerror(errno));
     fclose(file);
@@ -44,7 +43,8 @@ char *read_file(const char *filename) {
     return NULL;
   }
 
-  if ((line = malloc(sizeof *line * (linelen +1))) == NULL) {
+  char *line = malloc(sizeof *line * (linelen +1));
+  if (line == NULL) {
     fprintf(stderr, "%s: virtual memory exceeded!\n", progname);
     fclose(file);
     return NULL;
@@ -61,8 +61,7 @@ int mode_repl(int argc, char **argv, size_t stack_size, int optind) {
 
   /* file arg */
   if (optind < argc) {
-    int i;
-    for (i = optind; i < argc; ++i) {
+    for (int i = optind; i < argc; ++i) {
       char *data = read_file(argv[i]);
       if (data == NULL)
         continue;
@@ -85,13 +84,10 @@ int mode_repl(int argc, char **argv, size_t stack_size, int optind) {
   return 0;
 }
 
-int mode_nasm(int argc, char **argv, int optind) {
-  int i;
-  for (i = optind; i < argc; ++i) {
+int mode_nasm(int argc, char **argv, int optind, char *output_name) {
+  bool free_output_name = false;
+  for (int i = optind; i < argc; ++i) {
     FILE *input = fopen(argv[i], "r");
-    char *output_name = malloc(strlen(argv[i]) + 5 + 1);
-    FILE *output = NULL;
-
     if (input == NULL) {
       fprintf(stderr, "%s: cannot access %s: %s\n",
           progname, argv[i], strerror(errno));
@@ -99,41 +95,50 @@ int mode_nasm(int argc, char **argv, int optind) {
     }
 
     if (output_name == NULL) {
-      fprintf(stderr, "%s: virtual memory exceeded!\n", progname);
-      fclose(input);
-      return 1;
+      output_name = malloc(strlen(argv[i]) + 5 + 1);
+      free_output_name = true;
+
+      if (output_name == NULL) {
+        fprintf(stderr, "%s: virtual memory exceeded!\n", progname);
+        fclose(input);
+        return 1;
+      }
+
+      strcpy(output_name, argv[i]);
+      char *extension_ptr = strrchr(output_name, '.');
+      if (extension_ptr == NULL)
+        strcat(output_name, ".nasm");
+      else
+        strcpy(extension_ptr, ".nasm");
     }
 
-    strcpy(output_name, argv[i]);
-    char *extension_ptr = strrchr(output_name, '.');
-    if (extension_ptr == NULL)
-      strcat(output_name, ".nasm");
-    else
-      strcpy(extension_ptr, ".nasm");
-    output = fopen(output_name, "w");
-
+    FILE *output = fopen(output_name, "w");
     if (output == NULL) {
       fprintf(stderr, "%s: cannot access %s: %s\n",
           progname, output_name, strerror(errno));
       fclose(input);
-      free(output_name);
+      if (free_output_name)
+        free(output_name);
       return 1;
     }
 
     brainfuck_nasm_write(output, input);
     fclose(output);
-    free(output_name);
+    if (free_output_name)
+      free(output_name);
     fclose(input);
   }
   return 0;
 }
 
 int main(int argc, char **argv) {
+  char *outfile_name = NULL;
   output_t output = REPL;
   int option_index = 0;
   size_t starting_stack_size = 30000;
   struct option long_options[] = {
     {"nasm",        no_argument,       0, 'n'},
+    {"output",      required_argument, 0, 'o'},
     {"stack-size",  required_argument, 0, 's'},
     {"help",        no_argument,       0, '0'},
     {0,             0,                 0,  0}
@@ -142,18 +147,20 @@ int main(int argc, char **argv) {
   progname = argv[0];
 
   while (1) {
-    int c = getopt_long(argc, argv, "ns:", long_options, &option_index);
+    int c = getopt_long(argc, argv, "no:s:", long_options, &option_index);
     if (c == -1) {
       break;
     }
     switch (c) {
       case 'n': output = NASM; break;
+      case 'o': outfile_name = optarg;
       case 's': starting_stack_size = atoi(optarg); break;
       case '0':
         fprintf(stdout,
                 "Usage: %s [OPTIONS] [FILE]\n"
                 "Execute brainfuck with FILE(s) as source.\n\n"
                 "  -n, --nasm               output nasm assembly code\n"
+                "  -o, --output=FILE        name of output file\n"
                 "  -s, --stack-size=N       set stack size (default 30000)\n"
                 "      --help               display this help and exit\n\n"
                 "With no FILE, a repl is started\n"
@@ -167,6 +174,6 @@ int main(int argc, char **argv) {
 
   switch (output) {
     case REPL: return mode_repl(argc, argv, starting_stack_size, optind);
-    case NASM: return mode_nasm(argc, argv, optind);
+    case NASM: return mode_nasm(argc, argv, optind, outfile_name);
   }
 }

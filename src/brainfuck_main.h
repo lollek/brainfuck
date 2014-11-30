@@ -21,6 +21,6 @@ int mode_repl(int argc, char **argv, size_t stack_size, int optind);
 /* Switches to NASM mode
  *
  * Returns 0 on success, 1 on error */
-int mode_nasm(int argc, char **argv, int optind);
+int mode_nasm(int argc, char **argv, int optind, char *outfile_name);
 
 #endif /* BRAINFUCK_MAIN_H */
