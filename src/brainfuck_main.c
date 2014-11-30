@@ -114,7 +114,7 @@ int mode_nasm(int argc, char **argv, int optind, char *output_name) {
 
     FILE *output = fopen(output_name, "w");
     if (output == NULL) {
-      fprintf(stderr, "%s: cannot access %s: %s\n",
+      fprintf(stderr, "%s: cannot write to %s: %s\n",
           progname, output_name, strerror(errno));
       fclose(input);
       if (free_output_name)
