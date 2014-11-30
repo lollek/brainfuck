@@ -22,7 +22,7 @@ int resize_brainfuck_repl_stack(size_t new_stack_size) {
     return 1;
   }
 
-  debug_print("Stack size: %d -> %d\n", stack_size, new_stack_size);
+  debug_print("Stack size: %zu -> %zu\n", stack_size, new_stack_size);
   if ((new_stack = realloc(stack, new_stack_size)) == NULL) {
     fprintf(stderr, "Error: Virtual memory exceeded!\n");
     return 1;
@@ -57,7 +57,7 @@ static int _brainfuck(char *line) {
       case '-': --stack[stack_ptr]; break;
       case '>': if (stack_ptr +1 < stack_size) { ++stack_ptr; } break;
       case '<': if (stack_ptr > 0)             { --stack_ptr; } break;
-      case '?': printf("@%d[%d]\n", stack_ptr, stack[stack_ptr]); break;
+      case '?': printf("@%zu[%d]\n", stack_ptr, stack[stack_ptr]); break;
 
       case '[':
         /* Find the matching closing bracket */
