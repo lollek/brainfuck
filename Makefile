@@ -5,9 +5,9 @@ OBJS = $(addsuffix .o, $(basename $(wildcard src/*.c)))
 PROG_NAMES = brainfuck
 PROGS = $(addprefix bin/, $(PROG_NAMES))
 
-all: $(OBJS) $(PROG_NAMES)
+all: $(PROG_NAMES)
 
-%: src/%.o
+brainfuck: $(OBJS)
 	$(CC) $(LDFLAGS) -o bin/$@ src/$@*.o
 
 clean:
