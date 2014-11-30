@@ -1,6 +1,7 @@
 #include "brainfuck_nasm.h"
 
-static int counter = 0;
+static unsigned char stack[256] = { 0 };
+static unsigned char ptr = 0;
 
 static inline void op_put(FILE *output) {
   fprintf(output, "\tcall\t_put\n");
@@ -27,20 +28,19 @@ static inline void op_mvl(FILE *output) {
 }
 
 static void op_tag(FILE *output) {
-  fprintf(output, "tag%d:\n"
-                  "\tpush tag%d\n",
-                  counter, counter);
-  ++counter;
+  fprintf(output, "\tcmp\tbyte[ebp],0\n"
+                  "\tjz\tend%d%d\n"
+                  "tag%d%d:\n",
+          ptr, stack[ptr], ptr, stack[ptr]);
+  ++ptr;
 }
 
 static void op_jmp(FILE *output) {
-  fprintf(output, "\tpop\teax\n"
-                  "\tcmp\tbyte[ebp],0\n"
-                  "\tjz\tnojmp%d\n"
-                  "\tjmp\teax\n"
-                  "nojmp%d:\n",
-                  counter, counter);
-  ++counter;
+  fprintf(output, "\tcmp\tbyte[ebp],0\n"
+                  "\tjnz\ttag%d%d\n"
+                  "end%d%d:\n",
+                  ptr -1, stack[ptr -1], ptr -1, stack[ptr -1]);
+  stack[--ptr]++;
 }
 
 int brainfuck_nasm_write(FILE *output, FILE *input) {
