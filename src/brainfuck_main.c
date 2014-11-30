@@ -105,7 +105,11 @@ int mode_nasm(int argc, char **argv, int optind) {
     }
 
     strcpy(output_name, argv[i]);
-    strcat(output_name, ".nasm");
+    char *extension_ptr = strrchr(output_name, '.');
+    if (extension_ptr == NULL)
+      strcat(output_name, ".nasm");
+    else
+      strcpy(extension_ptr, ".nasm");
     output = fopen(output_name, "w");
 
     if (output == NULL) {
