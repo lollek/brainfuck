@@ -1,20 +1,38 @@
+#include <string.h>
+
 #include "brainfuck_nasm.h"
 
-#define op_put(output) fprintf(output, "\tcall\t_put\n");
-#define op_get(output) fprintf(output, "\tcall\t_get\n");
-#define op_inc(output) fprintf(output, "\tinc\tbyte[ebp]\n");
-#define op_dec(output) fprintf(output, "\tdec\tbyte[ebp]\n");
-#define op_mvr(output) fprintf(output, "\tinc\tebp\n");
-#define op_mvl(output) fprintf(output, "\tdec\tebp\n");
+#define op_put() fprintf(output, "\tcall\t_put\n");
+#define op_get() fprintf(output, "\tcall\t_get\n");
 
-#define op_tag(output)                       \
+static void op_inc(FILE *output, int N) {
+  if (N == 1) fprintf(output, "\tinc\tbyte[ebp]\n");
+  else        fprintf(output, "\tadd\tbyte[ebp],%d\n", N);
+}
+
+static void op_dec(FILE *output, int N) {
+  if (N == 1) fprintf(output, "\tdec\tbyte[ebp]\n");
+  else        fprintf(output, "\tsub\tbyte[ebp],%d\n", N);
+}
+
+static void op_mvr(FILE *output, int N) {
+  if (N == 1) fprintf(output, "\tinc\tebp\n");
+  else        fprintf(output, "\tadd\tebp,%d\n", N);
+}
+
+static void op_mvl(FILE *output, int N) {
+  if (N == 1) fprintf(output, "\tdec\tebp\n");
+  else        fprintf(output, "\tsub\tebp,%d\n", N);
+}
+
+#define op_tag()                             \
   fprintf(output, "\tcmp\tbyte[ebp],0\n"     \
                   "\tjz\tend%d_%d\n"         \
                   "tag%d_%d:",               \
           ptr, stack[ptr], ptr, stack[ptr]); \
   ++ptr;
 
-#define op_jmp(output)                                           \
+#define op_jmp()                                                 \
   fprintf(output, "\tcmp\tbyte[ebp],0\n"                         \
                   "\tjnz\ttag%d_%d\n"                            \
                   "end%d_%d:",                                   \
@@ -45,16 +63,37 @@ int brainfuck_nasm_write(FILE *output, FILE *input) {
   unsigned char ptr = 0;
   int op;
 
+  int queued_op = 0;
+  int num_queued = 0;
   while ((op = fgetc(input)) != EOF) {
+    if (strchr(".,+-><[]", op) == NULL)
+      continue;
+
+    if (queued_op != 0) {
+      if (queued_op == op) {
+        ++num_queued;
+        continue;
+      }
+
+      switch(queued_op) {
+        case '+': op_inc(output, num_queued); break;
+        case '-': op_dec(output, num_queued); break;
+        case '>': op_mvr(output, num_queued); break;
+        case '<': op_mvl(output, num_queued); break;
+      }
+      queued_op = 0;
+      num_queued = 0;
+    }
+
     switch (op) {
-      case '.': op_put(output); break;
-      case ',': op_get(output); break;
-      case '+': op_inc(output); break;
-      case '-': op_dec(output); break;
-      case '>': op_mvr(output); break;
-      case '<': op_mvl(output); break;
-      case '[': op_tag(output); break;
-      case ']': op_jmp(output); break;
+      case '.': op_put(); break;
+      case ',': op_get(); break;
+      case '+': /* FALLTHROUGH */
+      case '-': /* FALLTHROUGH */
+      case '>': /* FALLTHROUGH */
+      case '<': queued_op = op; num_queued = 1; break;
+      case '[': op_tag(); break;
+      case ']': op_jmp(); break;
     }
   }
 
