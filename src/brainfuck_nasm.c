@@ -9,15 +9,15 @@
 
 #define op_tag(output)                       \
   fprintf(output, "\tcmp\tbyte[ebp],0\n"     \
-                  "\tjz\tend%d%d\n"          \
-                  "tag%d%d:",                \
+                  "\tjz\tend%d_%d\n"         \
+                  "tag%d_%d:",               \
           ptr, stack[ptr], ptr, stack[ptr]); \
   ++ptr;
 
 #define op_jmp(output)                                           \
   fprintf(output, "\tcmp\tbyte[ebp],0\n"                         \
-                  "\tjnz\ttag%d%d\n"                             \
-                  "end%d%d:",                                    \
+                  "\tjnz\ttag%d_%d\n"                            \
+                  "end%d_%d:",                                   \
                   ptr -1, stack[ptr -1], ptr -1, stack[ptr -1]); \
   stack[--ptr]++;
 
