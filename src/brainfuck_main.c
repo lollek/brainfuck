@@ -8,6 +8,7 @@
 
 #include "brainfuck_repl.h"
 #include "brainfuck_nasm.h"
+#include "brainfuck_arm.h"
 
 #include "brainfuck_main.h"
 
@@ -84,7 +85,8 @@ int mode_repl(int argc, char **argv, size_t stack_size, int optind) {
   return 0;
 }
 
-int mode_nasm(int argc, char **argv, int optind, char *output_name) {
+int mode_compile(int argc, char **argv, int optind, char *output_name,
+                 output_t asm_type) {
   bool free_output_name = false;
   for (int i = optind; i < argc; ++i) {
     FILE *input = fopen(argv[i], "r");
@@ -122,7 +124,12 @@ int mode_nasm(int argc, char **argv, int optind, char *output_name) {
       return 1;
     }
 
-    brainfuck_nasm_write(output, input);
+    switch (asm_type) {
+      case NASM: brainfuck_nasm_write(output, input); break;
+      case ARM: brainfuck_arm_write(output, input); break;
+      default: break;
+    }
+
     fclose(output);
     if (free_output_name)
       free(output_name);
@@ -137,6 +144,7 @@ int main(int argc, char **argv) {
   int option_index = 0;
   size_t starting_stack_size = 30000;
   struct option long_options[] = {
+    {"arm",         no_argument,       0, 'a'},
     {"nasm",        no_argument,       0, 'n'},
     {"output",      required_argument, 0, 'o'},
     {"stack-size",  required_argument, 0, 's'},
@@ -147,19 +155,21 @@ int main(int argc, char **argv) {
   progname = argv[0];
 
   while (1) {
-    int c = getopt_long(argc, argv, "no:s:", long_options, &option_index);
+    int c = getopt_long(argc, argv, "ano:s:", long_options, &option_index);
     if (c == -1) {
       break;
     }
     switch (c) {
+      case 'a': output = ARM; break;
       case 'n': output = NASM; break;
       case 'o': outfile_name = optarg;
       case 's': starting_stack_size = atoi(optarg); break;
       case '0':
         fprintf(stdout,
                 "Usage: %s [OPTIONS] [FILE]\n"
-                "Execute brainfuck with FILE(s) as source.\n\n"
-                "  -n, --nasm               output nasm assembly code\n"
+                "Execute or create opcode for brainfuck with FILE as source.\n\n"
+                "  -a, --arm                output ARM assembly code\n"
+                "  -n, --nasm               output NASM assembly code\n"
                 "  -o, --output=FILE        name of output file\n"
                 "  -s, --stack-size=N       set stack size (default 30000)\n"
                 "      --help               display this help and exit\n\n"
@@ -174,6 +184,7 @@ int main(int argc, char **argv) {
 
   switch (output) {
     case REPL: return mode_repl(argc, argv, starting_stack_size, optind);
-    case NASM: return mode_nasm(argc, argv, optind, outfile_name);
+    case ARM:  /* FALLTHROUGH */
+    case NASM: return mode_compile(argc, argv, optind, outfile_name, output);
   }
 }

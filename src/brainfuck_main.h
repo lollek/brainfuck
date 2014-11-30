@@ -3,7 +3,8 @@
 
 typedef enum output_t {
   REPL,
-  NASM
+  NASM,
+  ARM
 } output_t;
 
 /* Read all contents of a file to the stack
@@ -21,6 +22,7 @@ int mode_repl(int argc, char **argv, size_t stack_size, int optind);
 /* Switches to NASM mode
  *
  * Returns 0 on success, 1 on error */
-int mode_nasm(int argc, char **argv, int optind, char *outfile_name);
+int mode_compile(int argc, char **argv, int optind, char *outfile_name,
+                 output_t asm_type);
 
 #endif /* BRAINFUCK_MAIN_H */
