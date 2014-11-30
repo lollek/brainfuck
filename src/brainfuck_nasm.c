@@ -41,7 +41,7 @@ int brainfuck_nasm_write(FILE *output, FILE *input) {
                   "\tmov\tebp,esp\t\t; Set ptr to start of stack\n"
                   "\tmov\tedx,1\t\t; edx (for _put and _get) is always 1\n");
 
-  unsigned char stack[256] = { 0 };
+  int stack[256] = { 0 };
   unsigned char ptr = 0;
   int op;
 
