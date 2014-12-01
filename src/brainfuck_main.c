@@ -6,143 +6,92 @@
 #include <getopt.h>
 #include <readline/readline.h>
 
+#include "brainfuck_io.h"
 #include "brainfuck_repl.h"
 #include "brainfuck_nasm.h"
 #include "brainfuck_arm.h"
 
-#include "brainfuck_main.h"
+extern const char *progname;
 
-static const char *progname = NULL;
+typedef enum output_t {
+  NONE,
+  NASM,
+  ARM
+} output_t;
 
-char *read_file(const char *filename) {
-  FILE *file = fopen(filename, "r");
-  if (file == NULL) {
-    fprintf(stderr, "%s: cannot access %s: %s\n",
-        progname, filename, strerror(errno));
-    return NULL;
-  }
-
-  if (fseek(file, 0, SEEK_END) == -1) {
-    fprintf(stderr, "%s: failed to seek in %s: %s\n",
-        progname, filename, strerror(errno));
-    fclose(file);
-    return NULL;
-  }
-
-  long linelen = ftell(file);
-  if (linelen == -1) {
-    fprintf(stderr, "%s: cannot get size of %s: %s\n",
-        progname, filename, strerror(errno));
-    fclose(file);
-    return NULL;
-  }
-
-  if (fseek(file, 0, SEEK_SET) == -1) {
-    fprintf(stderr, "%s: failed to rewind %s: %s\n",
-        progname, filename, strerror(errno));
-    fclose(file);
-    return NULL;
-  }
-
-  char *line = malloc(sizeof *line * (linelen +1));
-  if (line == NULL) {
-    fprintf(stderr, "%s: virtual memory exceeded!\n", progname);
-    fclose(file);
-    return NULL;
-  }
-
-  fread(line, sizeof *line, linelen, file);
-  line[linelen] = '\0';
-  fclose(file);
-  return line;
-}
-
-int mode_repl(int argc, char **argv, size_t stack_size, int optind) {
+static int mode_shell(size_t stack_size) {
   resize_brainfuck_repl_stack(stack_size);
+  printf("Welcome to brainfuck! Use Ctrl-D to exit\n");
 
-  /* file arg */
-  if (optind < argc) {
-    for (int i = optind; i < argc; ++i) {
-      char *data = read_file(argv[i]);
-      if (data == NULL)
-        continue;
-
-      brainfuck_repl_eval(data);
-      free(data);
-    }
-
-  /* repl */
-  } else {
-    char *line = NULL;
-    printf("Welcome to brainfuck! Use Ctrl-D to exit\n");
-    while ((line = readline(">> ")) != NULL) {
-      brainfuck_repl_eval(line);
-      free(line);
-    }
+  char *line = NULL;
+  while ((line = readline(">> ")) != NULL) {
+    brainfuck_repl_eval(line);
+    free(line);
   }
 
   free_brainfuck_repl_stack();
   return 0;
 }
 
-int mode_compile(int argc, char **argv, int optind, char *output_name,
-                 output_t asm_type) {
-  bool free_output_name = false;
-  for (int i = optind; i < argc; ++i) {
-    FILE *input = fopen(argv[i], "r");
-    if (input == NULL) {
-      fprintf(stderr, "%s: cannot access %s: %s\n",
-          progname, argv[i], strerror(errno));
-      return 1;
-    }
+static int mode_interpret(size_t stack_size, const char *infile) {
+  resize_brainfuck_repl_stack(stack_size);
 
-    if (output_name == NULL) {
-      output_name = malloc(strlen(argv[i]) + 5 + 1);
-      free_output_name = true;
-
-      if (output_name == NULL) {
-        fprintf(stderr, "%s: virtual memory exceeded!\n", progname);
-        fclose(input);
-        return 1;
-      }
-
-      strcpy(output_name, argv[i]);
-      char *extension_ptr = strrchr(output_name, '.');
-      if (extension_ptr == NULL)
-        strcat(output_name, ".nasm");
-      else
-        strcpy(extension_ptr, ".nasm");
-    }
-
-    FILE *output = fopen(output_name, "w");
-    if (output == NULL) {
-      fprintf(stderr, "%s: cannot write to %s: %s\n",
-          progname, output_name, strerror(errno));
-      fclose(input);
-      if (free_output_name)
-        free(output_name);
-      return 1;
-    }
-
-    switch (asm_type) {
-      case NASM: brainfuck_nasm_write(output, input); break;
-      case ARM: brainfuck_arm_write(output, input); break;
-      default: break;
-    }
-
-    fclose(output);
-    if (free_output_name)
-      free(output_name);
-    fclose(input);
+  char *data = read_file(infile);
+  if (data != NULL) {
+    brainfuck_repl_eval(data);
+    free(data);
   }
+
+  free_brainfuck_repl_stack();
+  return 0;
+}
+
+static int mode_compile(char *infile_name, char *outfile_name,
+                        output_t asm_type) {
+  FILE *infile = open_file_for_reading(infile_name);
+  if (infile == NULL)
+    return 1;
+
+  /* If no given outfile_name, set infile_name minus extension, plus .o */
+  bool free_outfile_name = false;
+  if (outfile_name == NULL) {
+    free_outfile_name = true;
+
+    if ((outfile_name = malloc(strlen(infile_name) + 5 + 1)) == NULL) {
+      fprintf(stderr, "%s: virtual memory exceeded!\n", progname);
+      fclose(infile);
+      return 1;
+    }
+
+    strcpy(outfile_name, infile_name);
+    char *ext = strchr(outfile_name, '.');
+    if (ext != NULL) strcpy(ext, ".nasm");
+    else             strcat(outfile_name, ".nasm");
+  }
+
+  FILE *outfile = open_file_for_writing(outfile_name);
+  if (outfile == NULL) {
+    fclose(infile);
+    if (free_outfile_name)
+      free(outfile_name);
+    return 1;
+  }
+
+  switch (asm_type) {
+    case NASM: brainfuck_nasm_write(outfile, infile); break;
+    case ARM: brainfuck_arm_write(outfile, infile); break;
+    default: break;
+  }
+
+  fclose(infile);
+  fclose(outfile);
+  if (free_outfile_name)
+    free(outfile_name);
   return 0;
 }
 
 int main(int argc, char **argv) {
-  char *outfile_name = NULL;
-  output_t output = REPL;
   int option_index = 0;
-  size_t starting_stack_size = 30000;
   struct option long_options[] = {
     {"arm",         no_argument,       0, 'a'},
     {"nasm",        no_argument,       0, 'n'},
@@ -152,7 +101,11 @@ int main(int argc, char **argv) {
     {0,             0,                 0,  0}
   };
 
+  size_t starting_stack_size = 30000;
   progname = argv[0];
+  char *outfile_name = NULL;
+  char *infile_name = NULL;
+  output_t output = NONE;
 
   while (1) {
     int c = getopt_long(argc, argv, "ano:s:", long_options, &option_index);
@@ -166,7 +119,7 @@ int main(int argc, char **argv) {
       case 's': starting_stack_size = atoi(optarg); break;
       case '0':
         fprintf(stdout,
-                "Usage: %s [OPTIONS] [FILE]\n"
+                "Usage: %s [OPTIONS] FILE\n"
                 "Execute or create opcode for brainfuck with FILE as source.\n\n"
                 "  -a, --arm                output ARM assembly code\n"
                 "  -n, --nasm               output NASM assembly code\n"
@@ -174,17 +127,26 @@ int main(int argc, char **argv) {
                 "  -s, --stack-size=N       set stack size (default 30000)\n"
                 "      --help               display this help and exit\n\n"
                 "With no FILE, a repl is started\n"
-                ,argv[0]);
+                ,progname);
         return 0;
-      default: fprintf(stderr, "Try '%s --help' for more information\n",
-                        argv[0]);
-               return 1;
+      default:
+        fprintf(stderr, "Try '%s --help' for more information\n", progname);
+        return 1;
     }
   }
 
+  int num_files = argc - optind;
+  if (num_files > 1) {
+    fprintf(stderr, "%s: Can only take one file\n", progname);
+    return 1;
+
+  } else if (num_files != 1)
+    return mode_shell(starting_stack_size);
+
+  infile_name = argv[optind];
   switch (output) {
-    case REPL: return mode_repl(argc, argv, starting_stack_size, optind);
+    case NONE: return mode_interpret(starting_stack_size, infile_name);
     case ARM:  /* FALLTHROUGH */
-    case NASM: return mode_compile(argc, argv, optind, outfile_name, output);
+    case NASM: return mode_compile(infile_name, outfile_name, output);
   }
 }
