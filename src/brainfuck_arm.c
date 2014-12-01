@@ -6,19 +6,17 @@
 #define op_get() fprintf(output, "\tbl\t_get\n");
 
 static void op_inc(FILE *output, int N) {
-  fprintf(output, "\tldr\tr0,[r11]\n");
-  if (N < 256) fprintf(output, "\tadd\tr0,#%d\n", N);
-  else         fprintf(output, "\tldr\tr1,=%d\n"
-                               "\tadd\tr0,r1\n", N);
-  fprintf(output, "\tstr\tr0,[r11]\n");
+  N %= 256; /* 256 rotations will loop a byte anyways */
+  fprintf(output, "\tldrb\tr0,[r11]\n"
+                  "\tadd\tr0,#%d\n"
+                  "\tstrb\tr0,[r11]\n", N);
 }
 
 static void op_dec(FILE *output, int N) {
-  fprintf(output, "\tldr\tr0,[r11]\n");
-  if (N < 256) fprintf(output, "\tsub\tr0,#%d\n", N);
-  else         fprintf(output, "\tldr\tr1,=%d\n"
-                               "\tsub\tr0,r1\n", N);
-  fprintf(output, "\tstr\tr0,[r11]\n");
+  N %= 256; /* 256 rotations will loop a byte anyways */
+  fprintf(output, "\tldrb\tr0,[r11]\n"
+                  "\tsub\tr0,#%d\n"
+                  "\tstrb\tr0,[r11]\n", N);
 }
 
 static void op_mvr(FILE *output, int N) {
@@ -34,7 +32,7 @@ static void op_mvl(FILE *output, int N) {
 }
 
 #define op_tag()                             \
-  fprintf(output, "\tldr\tr0,[r11]\n"        \
+  fprintf(output, "\tldrb\tr0,[r11]\n"       \
                   "\tcmp\tr0,#0\n"           \
                   "\tbeq\tend%d_%d\n"        \
                   "tag%d_%d:",               \
@@ -42,7 +40,7 @@ static void op_mvl(FILE *output, int N) {
   ++ptr;
 
 #define op_jmp()                                                 \
-  fprintf(output, "\tldr\tr0,[r11]\n"                            \
+  fprintf(output, "\tldrb\tr0,[r11]\n"                           \
                   "\tcmp\tr0,#0\n"                               \
                   "\tbne\ttag%d_%d\n"                            \
                   "end%d_%d:",                                   \
@@ -65,8 +63,9 @@ int brainfuck_arm_write(FILE *output, FILE *input) {
                   "\tswi\t#0\n"
                   "\tbx\tlr\n"
   /* START */     "_start:\n"
-                  "\tldr\tr0,=#7000\t@ Stack size\n"
-                  "\tsub\tsp,r0\t\t@ Set stack\n"
+                  "\tmov\tr0,#1\t\t@ Set stack size to 8192\n"
+                  "\tlsl\tr0,#13\n"
+                  "\tsub\tsp,r0\t\t@ Create stack\n"
                   "\tmov\tr11,sp\t\t@ Set ptr to start of stack\n"
                   "\tmov\tr2,#1\t\t@ r2 (for _put and _get) is always 1\n");
 
