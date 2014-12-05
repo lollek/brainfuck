@@ -13,7 +13,7 @@ _get:				; sys_read(stdin, ebp, 1)
 	int	80h
 	ret
 _start:
-	sub	esp,0	; Init stack
+	sub	esp,8000	; Init stack
 	mov	ebp,esp		; Set ptr to start of stack
 	mov	edx,1		; edx (for _put and _get) is always 1
 	inc	ebp

@@ -70,7 +70,6 @@ static void define_get() {
 
 
 static void define_start(size_t stacksize) {
-  (void)stacksize;
   switch(type) {
     case ARM:
       fprintf(output,
@@ -84,7 +83,7 @@ static void define_start(size_t stacksize) {
     case NASM:
       fprintf(output,
         "_start:\n"
-        "\tsub\tesp,%d\t; Init stack\n"
+        "\tsub\tesp,%zu\t; Init stack\n"
         "\tmov\tebp,esp\t\t; Set ptr to start of stack\n"
         "\tmov\tedx,1\t\t; edx (for _put and _get) is always 1\n", stacksize);
       break;
@@ -241,6 +240,7 @@ int brainfuck_make_asm(FILE *_output, FILE *_input, output_t _type,
   type = _type;
 
   assert(type != NONE);
+  assert(stacksize > 0);
 
   /* Create header */
   session_start();

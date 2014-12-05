@@ -9,8 +9,6 @@
 #include "brainfuck_asm.h"
 #include "brainfuck_io.h"
 #include "brainfuck_repl.h"
-#include "brainfuck_nasm.h"
-#include "brainfuck_arm.h"
 
 extern const char *progname;
 
@@ -106,7 +104,7 @@ int main(int argc, char **argv) {
     switch (c) {
       case 'a': output = ARM; break;
       case 'n': output = NASM; break;
-      case 'o': outfile_name = optarg;
+      case 'o': outfile_name = optarg; break;
       case 's': starting_stack_size = atoi(optarg); break;
       case '0':
         fprintf(stdout,
