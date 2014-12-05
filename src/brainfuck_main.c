@@ -6,18 +6,13 @@
 #include <getopt.h>
 #include <readline/readline.h>
 
+#include "brainfuck_asm.h"
 #include "brainfuck_io.h"
 #include "brainfuck_repl.h"
 #include "brainfuck_nasm.h"
 #include "brainfuck_arm.h"
 
 extern const char *progname;
-
-typedef enum output_t {
-  NONE,
-  NASM,
-  ARM
-} output_t;
 
 static int mode_shell(size_t stack_size) {
   resize_brainfuck_repl_stack(stack_size);
@@ -77,11 +72,7 @@ static int mode_compile(char *infile_name, char *outfile_name,
     return 1;
   }
 
-  switch (asm_type) {
-    case NASM: brainfuck_nasm_write(outfile, infile, stacksize); break;
-    case ARM: brainfuck_arm_write(outfile, infile, stacksize); break;
-    default: break;
-  }
+  brainfuck_make_asm(outfile, infile, asm_type, stacksize);
 
   fclose(infile);
   fclose(outfile);
