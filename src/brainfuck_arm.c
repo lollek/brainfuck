@@ -47,7 +47,8 @@ static void op_mvl(FILE *output, int N) {
                   ptr -1, stack[ptr -1], ptr -1, stack[ptr -1]); \
   stack[--ptr]++;
 
-int brainfuck_arm_write(FILE *output, FILE *input) {
+int brainfuck_arm_write(FILE *output, FILE *input, size_t stacksize) {
+  (void)stacksize;
   fprintf(output, ".text\n"
                   "\t.globl _start\n"
   /* PUT */       "_put:\t\t\t\t@ sys_write(stdout, r11, 1)\n"

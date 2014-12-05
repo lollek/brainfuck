@@ -6,6 +6,6 @@
 /* Takes brainfuck in input and write nasm aseembly to output
  *
  * Return 0 on success */
-int brainfuck_nasm_write(FILE *output, FILE *input);
+int brainfuck_nasm_write(FILE *output, FILE *input, size_t stacksize);
 
 #endif /* BRAINFUCK_NASM_H */

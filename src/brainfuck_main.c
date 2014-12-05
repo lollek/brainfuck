@@ -47,7 +47,7 @@ static int mode_interpret(size_t stack_size, const char *infile) {
 }
 
 static int mode_compile(char *infile_name, char *outfile_name,
-                        output_t asm_type) {
+                        output_t asm_type, size_t stacksize) {
   FILE *infile = open_file_for_reading(infile_name);
   if (infile == NULL)
     return 1;
@@ -78,8 +78,8 @@ static int mode_compile(char *infile_name, char *outfile_name,
   }
 
   switch (asm_type) {
-    case NASM: brainfuck_nasm_write(outfile, infile); break;
-    case ARM: brainfuck_arm_write(outfile, infile); break;
+    case NASM: brainfuck_nasm_write(outfile, infile, stacksize); break;
+    case ARM: brainfuck_arm_write(outfile, infile, stacksize); break;
     default: break;
   }
 
@@ -101,7 +101,7 @@ int main(int argc, char **argv) {
     {0,             0,                 0,  0}
   };
 
-  size_t starting_stack_size = 30000;
+  size_t starting_stack_size = 8000;
   progname = argv[0];
   char *outfile_name = NULL;
   char *infile_name = NULL;
@@ -124,7 +124,7 @@ int main(int argc, char **argv) {
                 "  -a, --arm                output ARM assembly code\n"
                 "  -n, --nasm               output NASM assembly code\n"
                 "  -o, --output=FILE        name of output file\n"
-                "  -s, --stack-size=N       set stack size (default 30000)\n"
+                "  -s, --stack-size=N       stack size in bytes (default 8000)\n"
                 "      --help               display this help and exit\n\n"
                 "With no FILE, a repl is started instead\n"
                 ,progname);
@@ -147,6 +147,7 @@ int main(int argc, char **argv) {
   switch (output) {
     case NONE: return mode_interpret(starting_stack_size, infile_name);
     case ARM:  /* FALLTHROUGH */
-    case NASM: return mode_compile(infile_name, outfile_name, output);
+    case NASM: return mode_compile(infile_name, outfile_name, output,
+                                   starting_stack_size);
   }
 }

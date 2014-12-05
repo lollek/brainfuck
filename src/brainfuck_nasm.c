@@ -39,7 +39,7 @@ static void op_mvl(FILE *output, int N) {
                   ptr -1, stack[ptr -1], ptr -1, stack[ptr -1]); \
   stack[--ptr]++;
 
-int brainfuck_nasm_write(FILE *output, FILE *input) {
+int brainfuck_nasm_write(FILE *output, FILE *input, size_t stacksize) {
   fprintf(output, "section .text\n"
                   "\tglobal _start\n"
   /* PUT */       "_put:\t\t\t\t; sys_write(stdout, ebp, 1)\n"
@@ -55,9 +55,10 @@ int brainfuck_nasm_write(FILE *output, FILE *input) {
                   "\tint\t80h\n"
                   "\tret\n"
   /* START */     "_start:\n"
-                  "\tsub\tesp,7000\t; 7000 byte stack\n"
+                  "\tsub\tesp,%d\t; Init stack\n"
                   "\tmov\tebp,esp\t\t; Set ptr to start of stack\n"
-                  "\tmov\tedx,1\t\t; edx (for _put and _get) is always 1\n");
+                  "\tmov\tedx,1\t\t; edx (for _put and _get) is always 1\n",
+                  stacksize);
 
   int stack[256] = { 0 };
   unsigned char ptr = 0;
