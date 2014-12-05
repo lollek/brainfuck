@@ -3,12 +3,38 @@
 use strict;
 use warnings;
 
-use Test::Simple tests => 3;
+use Digest::SHA;
+use Test::Simple tests => 9;
 
-# Hello World!
+# Interpreter
+printf "Testing interpreter\n";
 foreach my $file (<tests/HELLO*.BF>) {
   my $expected = "Hello World!\n";
   my $results = `bin/brainfuck $file`;
   ok($expected eq $results)
-     or die "$file failed! Expected: $expected. Was: $results\n";
+     or warn "$file failed! Expected: $expected. Was: $results\n";
+}
+
+# Transpiler (ARM)
+printf "Testing ARM transpiler\n";
+foreach my $file (<tests/HELLO*.BF>) {
+  $file =~ s/\.BF//;
+  `bin/brainfuck -ao tmpfile $file.BF`;
+  my $expected = (split(" ", `shasum $file.arm.asm`))[0];
+  my $results = (split(" ", `shasum tmpfile`))[0];
+  ok($expected eq $results)
+     or warn "File $file gives the wrong output!\n";
+  `rm tmpfile`;
+}
+
+# Transpiler (NASM)
+printf "Testing NASM transpiler\n";
+foreach my $file (<tests/HELLO*.BF>) {
+  $file =~ s/\.BF//;
+  `bin/brainfuck -no tmpfile $file.BF`;
+  my $expected = (split(" ", `shasum $file.nasm.asm`))[0];
+  my $results = (split(" ", `shasum tmpfile`))[0];
+  ok($expected eq $results)
+     or warn "File $file gives the wrong output!\n";
+  `rm tmpfile`;
 }
