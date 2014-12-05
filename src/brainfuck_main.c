@@ -119,14 +119,14 @@ int main(int argc, char **argv) {
       case 's': starting_stack_size = atoi(optarg); break;
       case '0':
         fprintf(stdout,
-                "Usage: %s [OPTIONS] FILE\n"
+                "Usage: %s [OPTIONS] [FILE]\n"
                 "Execute or create opcode for brainfuck with FILE as source.\n\n"
                 "  -a, --arm                output ARM assembly code\n"
                 "  -n, --nasm               output NASM assembly code\n"
                 "  -o, --output=FILE        name of output file\n"
                 "  -s, --stack-size=N       set stack size (default 30000)\n"
                 "      --help               display this help and exit\n\n"
-                "With no FILE, a repl is started\n"
+                "With no FILE, a repl is started instead\n"
                 ,progname);
         return 0;
       default:
