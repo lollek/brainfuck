@@ -233,6 +233,15 @@ static void op_jmp() {
   stack[--ptr]++;
 }
 
+static void handle_queued_ops(int queued_op, int num_queued) {
+  switch(queued_op) {
+    case '+': op_inc(num_queued); break;
+    case '-': op_dec(num_queued); break;
+    case '>': op_mvr(num_queued); break;
+    case '<': op_mvl(num_queued); break;
+  }
+}
+
 int brainfuck_make_asm(FILE *_output, FILE *_input, output_t _type,
                        size_t stacksize) {
   output = _output;
@@ -266,12 +275,7 @@ int brainfuck_make_asm(FILE *_output, FILE *_input, output_t _type,
         continue;
       }
 
-      switch(queued_op) {
-        case '+': op_inc(num_queued); break;
-        case '-': op_dec(num_queued); break;
-        case '>': op_mvr(num_queued); break;
-        case '<': op_mvl(num_queued); break;
-      }
+      handle_queued_ops(queued_op, num_queued);
       queued_op = 0;
       num_queued = 0;
     }
@@ -287,6 +291,7 @@ int brainfuck_make_asm(FILE *_output, FILE *_input, output_t _type,
       case ']': op_jmp(stack, ptr); break;
     }
   }
+  handle_queued_ops(queued_op, num_queued);
 
   /* Create clean exit */
   define_exit();
